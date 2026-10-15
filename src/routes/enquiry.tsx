@@ -18,8 +18,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { inr, materialById, materials, suppliers } from "@/lib/data";
 
 export const Route = createFileRoute("/enquiry")({
-  validateSearch: (search: Record<string, unknown>): { material?: string } =>
-    typeof search["material"] === "string" ? { material: search["material"] } : {},
+  validateSearch: (search: Record<string, unknown>): { material?: string; quantity?: number } => ({
+    ...(typeof search["material"] === "string" ? { material: search["material"] } : {}),
+    ...(typeof search["quantity"] === "number" &&
+    Number.isFinite(search["quantity"]) &&
+    search["quantity"] > 0
+      ? { quantity: Math.round(search["quantity"]) }
+      : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Order Enquiry — BuildWise AI" },
