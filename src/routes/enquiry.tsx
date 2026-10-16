@@ -18,8 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { inr, materialById, materials, suppliers } from "@/lib/data";
 
 export const Route = createFileRoute("/enquiry")({
-  validateSearch: (search: Record<string, unknown>): { material?: string; quantity?: number } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { material?: string; quantity?: number; supplier?: string } => ({
     ...(typeof search["material"] === "string" ? { material: search["material"] } : {}),
+    ...(typeof search["supplier"] === "string" ? { supplier: search["supplier"] } : {}),
     ...(typeof search["quantity"] === "number" &&
     Number.isFinite(search["quantity"]) &&
     search["quantity"] > 0
@@ -51,8 +54,12 @@ const cities = ["Mumbai", "Pune", "Nashik", "Nagpur", "Surat", "Ahmedabad"];
 function EnquiryPage() {
   const search = Route.useSearch();
   const [materialId, setMaterialId] = useState(materialById(search.material).id);
-  const [supplierId, setSupplierId] = useState((suppliers[0] as (typeof suppliers)[number]).id);
-  const [quantity, setQuantity] = useState("100");
+  const [supplierId, setSupplierId] = useState(
+    suppliers.some((s) => s.id === search.supplier)
+      ? (search.supplier as string)
+      : (suppliers[0] as (typeof suppliers)[number]).id,
+  );
+  const [quantity, setQuantity] = useState(search.quantity ? String(search.quantity) : "100");
   const [city, setCity] = useState(cities[0] as string);
   const [reference, setReference] = useState<string | null>(null);
 
@@ -60,8 +67,21 @@ function EnquiryPage() {
   const supplier =
     suppliers.find((s) => s.id === supplierId) ?? (suppliers[0] as (typeof suppliers)[number]);
 
+  const quantityNum = Number(quantity);
+  const quantityError =
+    quantity.trim() === ""
+      ? "Enter a quantity — this field is required."
+      : !Number.isFinite(quantityNum)
+        ? "Quantity must be a number."
+        : quantityNum <= 0
+          ? "Quantity must be greater than zero."
+          : quantityNum > 1_000_000
+            ? "That quantity looks unrealistic — please check it."
+            : null;
+
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (quantityError) return;
     setReference(`BW-2026-${Math.floor(1000 + Math.random() * 9000)}`);
   }
 
@@ -159,11 +179,18 @@ function EnquiryPage() {
               <Input
                 id="qty"
                 type="number"
-                min="1"
-                required
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+                aria-invalid={quantityError ? true : undefined}
+                className={quantityError ? "border-destructive" : undefined}
               />
+              {quantityError ? (
+                <p className="text-xs text-destructive">{quantityError}</p>
+              ) : search.quantity ? (
+                <p className="text-xs text-muted-foreground">
+                  Pre-filled from your estimate — feel free to adjust it.
+                </p>
+              ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Preferred supplier (fictional)</Label>
