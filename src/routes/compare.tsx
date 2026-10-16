@@ -149,7 +149,7 @@ function ComparePage() {
                 </p>
 
                 <Button asChild className="mt-auto" variant={isBest ? "default" : "outline"}>
-                  <Link to="/enquiry" search={{ material: selected.id }}>
+                  <Link to="/enquiry" search={{ material: selected.id, supplier: offer.supplier.id }}>
                     Enquire with {offer.supplier.name.split(" ")[0]}
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>
